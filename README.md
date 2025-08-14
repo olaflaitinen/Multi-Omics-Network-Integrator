@@ -2,60 +2,55 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 ![Language](https://img.shields.io/badge/language-Python-blue.svg)
-[![Python Version](https://img.shields.io/badge/python-3.9+-brightgreen.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/olaflaitinen/Multi-Omics-Network-Integrator/actions/workflows/ci.yml/badge.svg)](https://github.com/olaflaitinen/Multi-Omics-Network-Integrator/actions/workflows/ci.yml)
 
-A Python toolkit to integrate transcriptomic (RNA-Seq) and proteomic (Mass Spectrometry) data to construct and analyze dysregulated signaling networks in disease. This project is based on methods developed during my PhD research on neurodegeneration at the University of Luxembourg.
+A Python tool to integrate transcriptomic (RNA-Seq) and proteomic data with a protein-protein interaction (PPI) network to identify and analyze dysregulated signaling pathways. This project is based on methods developed during my PhD research on neurodegeneration.
 
 ### Workflow Overview
 
-The core idea is to identify differentially expressed genes and proteins, map them onto a known protein-protein interaction (PPI) network, and then analyze the resulting subnetwork to find key drivers of dysregulation.
+The tool scores nodes (genes/proteins) in a background PPI network based on their significance in one or both omics layers. It then identifies "hotspot" subnetworks—highly interconnected regions of the network that are significantly dysregulated.
 
 ```
-+--------------------------+      +--------------------------+
-|   RNA-Seq Count Data     |      | Proteomics Intensity Data|
-+--------------------------+      +--------------------------+
-             |                                 |
-             ▼                                 ▼
-+--------------------------+      +--------------------------+
-|  Differential Expression |      |  Differential Abundance  |
-|      (e.g., DESeq2)      |      |      (e.g., t-test)      |
-+--------------------------+      +--------------------------+
-             |                                 |
-             └─────────────┐   ┌─────────────┘
-                           ▼   ▼
-            +-----------------------------------+
-            |  Combined List of Dysregulated    |
-            |        Genes and Proteins         |
-            +-----------------------------------+
-                           |
-                           ▼
-            +-----------------------------------+
-            |   Fetch Interactions from a PPI   |
-            |   Database (e.g., STRING-DB)      |
-            +-----------------------------------+
-                           |
-                           ▼
-            +-----------------------------------+
-            | Construct & Visualize Integrated  |
-            |         Signaling Network         |
-            |   (Nodes colored by omics data)   |
-            +-----------------------------------+
-                           |
-                           ▼
-            +-----------------------------------+
-            |  Analyze Network for Hubs, Hubs,   |
-            |    and Dysregulated Pathways      |
-            +-----------------------------------+
+┌────────────────────────┐      ┌────────────────────────┐      ┌────────────────────────┐
+│   Transcriptomics      │      │     Proteomics         │      │     PPI Network        │
+│ (logFC, p-value)       │      │   (logFC, p-value)     │      │   (e.g., STRING DB)    │
+└──────────┬─────────────┘      └──────────┬─────────────┘      └──────────┬─────────────┘
+           │                              │                                │
+           └───────────────┐  ┌───────────┘                                │
+                           ▼  ▼                                            │
+                  ┌────────────────────────┐                               │
+                  │    Score Nodes & Edges │                               │
+                  │ (Integrate Omics Data) │                               │
+                  └──────────┬─────────────┘                               │
+                           └───────────────┐  ┌────────────────────────────┘
+                                           ▼  ▼
+                                  ┌──────────────────┐
+                                  │   Build Weighted │
+                                  │      Graph       │
+                                  └────────┬─────────┘
+                                           │
+                                           ▼
+                                  ┌──────────────────┐
+                                  │   Find Active    │
+                                  │   Subnetworks    │
+                                  └────────┬─────────┘
+                                           │
+                                           ▼
+                    ┌─────────────────────────────────────────┐
+                    │    Output: Network files, Plots,        │
+                    │    Ranked list of dysregulated pathways │
+                    └─────────────────────────────────────────┘
 ```
+
+![Example Network Visualization](assets/network_visualization_example.png)
 
 ### Features
 
--   **Data Loading & Validation**: Handles RNA-Seq counts, proteomics intensities, and metadata.
--   **Differential Analysis**: Wrapper for `pydeseq2` for RNA-Seq and `scipy` t-tests for proteomics.
--   **Network Construction**: Fetches high-confidence interactions from STRING-DB for a given list of proteins.
--   **Data Integration**: Overlays transcriptomic and proteomic log2-fold-changes and p-values as attributes onto network nodes.
--   **Network Analysis**: Identifies key hub proteins based on network centrality.
--   **Interactive Visualization**: Generates a dynamic, explorable HTML network graph using `pyvis`.
+-   **Data Integration**: Merges differential expression/abundance results from RNA-Seq and proteomics.
+-   **Node Scoring**: Implements a flexible scoring system to weight genes based on their significance in each omic layer.
+-   **Network Construction**: Builds a weighted `networkx` graph from a user-provided PPI network.
+-   **Subnetwork Analysis**: Identifies connected components and ranks them to find dysregulated signaling "hotspots".
+-   **Visualization**: Generates static and interactive network plots using `Matplotlib` and `pyvis`.
 
 ### Installation
 
@@ -76,19 +71,41 @@ The core idea is to identify differentially expressed genes and proteins, map th
     pip install -r requirements.txt
     ```
 
-### Quick Start
+### Usage
 
-The best way to get started is to run the example walkthrough in the Jupyter Notebook. This will guide you through every step of the analysis using the provided sample data.
+There are two ways to use this tool:
+
+#### 1. Command-Line Interface (CLI)
+
+The `main_cli.py` script provides a simple interface for running the full pipeline.
 
 ```bash
-cd notebooks
-jupyter-lab walkthrough.ipynb
+python main_cli.py \
+    --config config/default_config.yaml \
+    --rnaseq data/example_rnaseq_results.csv \
+    --proteomics data/example_proteomics_results.csv \
+    --ppi data/example_ppi_network.tsv \
+    --output_dir ./results
 ```
 
-### Configuration
+#### 2. Jupyter Notebook
 
-Analysis parameters (e.g., p-value cutoffs, species for STRING-DB) can be easily modified in the `config/analysis_config.yaml` file without changing the source code.
+For a detailed, step-by-step walkthrough with explanations and intermediate visualizations, open and run the `notebooks/analysis_walkthrough.ipynb` notebook. This is the recommended way to get started.
 
-### License
+```bash
+jupyter-lab notebooks/analysis_walkthrough.ipynb
+```
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+### Methodology
+
+The core of the integration is a node scoring function. For a given gene/protein `i`, its score `S(i)` is calculated as:
+
+`S(i) = w_rna * f(p_rna,i) + w_prot * f(p_prot,i)`
+
+where `w` are user-defined weights for each omic layer, and `f(p)` is a transformation of the p-value (e.g., `-log10(p)`) for significant hits. This score is then used as a node attribute in the PPI network to find high-scoring subnetworks.
+
+### Citation
+
+This tool is an implementation of methods described in:
+
+> Imanov, O. Y. L. (2028). *Thesis: Integrative Network Analysis of Transcriptomic and Proteomic Data to Uncover Dysregulated Signaling Cascades in Early-Stage Neurodegeneration*. University of Luxembourg.
