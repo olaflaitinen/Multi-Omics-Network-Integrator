@@ -1,0 +1,19 @@
+# Configuration for the Multi-Omics Network Integrator
+
+# Significance thresholds for filtering omics data
+significance:
+  p_value_threshold: 0.05
+  abs_logfc_threshold: 1.0
+
+# Node scoring parameters
+scoring:
+  # Weight for each omics layer in the final score
+  rna_weight: 0.5
+  protein_weight: 0.5
+  # How to handle non-significant genes (0 score or a small baseline)
+  default_score: 0.0
+
+# Network analysis parameters
+analysis:
+  # Minimum number of nodes for a hotspot subnetwork to be considered
+  min_subnetwork_size: 5
