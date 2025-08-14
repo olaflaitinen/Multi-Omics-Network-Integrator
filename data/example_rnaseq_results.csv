@@ -1,0 +1,6 @@
+gene,log2FoldChange,padj
+EGFR,2.5,0.001
+MAPK1,-1.2,0.04
+AKT1,1.8,0.02
+TP53,0.5,0.6
+HSPB1,-2.1,0.005
