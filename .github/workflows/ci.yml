@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-pipeline:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10']
+
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run end-to-end test with CLI
+      run: |
+        python main_cli.py \
+          --config config/default_config.yaml \
+          --rnaseq data/example_rnaseq_results.csv \
+          --proteomics data/example_proteomics_results.csv \
+          --ppi data/example_ppi_network.tsv \
+          --output_dir ./test-results
+
+    - name: Check for output files
+      run: |
+        ls -l ./test-results
+        test -f ./test-results/hotspot_subnetworks.csv
+        test -f ./test-results/largest_hotspot_static.png
